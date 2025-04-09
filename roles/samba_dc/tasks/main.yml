@@ -1,0 +1,45 @@
+---
+- name: Установка Samba и зависимостей
+  package:
+    name:
+      - samba
+      - samba-dc
+      - krb5-server
+    state: present
+
+- name: Настройка Samba как контроллера домена
+  template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart samba
+
+- name: Создание домена Samba
+  command: samba-tool domain provision --use-rfc2307 --realm={{ domain_name | upper }} --domain={{ domain_name.split('.')[0] | upper }} --server-role=dc --dns-backend=BIND9_DLZ --adminpass={{ domain_admin_password }}
+
+- name: Запуск и включение служб Samba
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  with_items:
+    - smb
+    - nmb
+    - winbind
+
+- name: Настройка Kerberos
+  template:
+    src: krb5.conf.j2
+    dest: /etc/krb5.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Добавление записей DNS для домена
+  command: samba-tool dns add localhost {{ domain_name }} {{ item.name }} {{ item.type }} {{ item.data }}
+  with_items:
+    - { name: "@", type: "A", data: "192.168.1.1" }
+    - { name: "server", type: "A", data: "192.168.1.1" }
+    - { name: "_ldap._tcp", type: "SRV", data: "0 100 389 server.{{ domain_name }}" }

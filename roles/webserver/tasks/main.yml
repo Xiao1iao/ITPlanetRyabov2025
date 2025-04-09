@@ -1,0 +1,19 @@
+---
+- name: Установка Nginx
+  package:
+    name: nginx
+    state: present
+
+- name: Настройка сайта по умолчанию
+  template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Запуск и включение Nginx
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes

@@ -1,0 +1,27 @@
+---
+- name: Развертывание инфраструктуры филиала
+  hosts: all
+  become: yes
+  vars:
+    domain_name: "ryabov.local"
+    domain_admin_password: "Aa123456"
+    dhcp_range: "192.168.1.100 192.168.1.200"
+    dhcp_netmask: "255.255.255.0"
+    dhcp_gateway: "192.168.1.1"
+    dhcp_dns: "192.168.1.1"
+
+- name: Настройка сервера
+  hosts: server
+  become: yes
+  roles:
+    - samba_dc
+    - dns
+    - dhcp
+    - webserver
+    - firewall
+
+- name: Настройка клиентов
+  hosts: clients
+  become: yes
+  roles:
+    - join_domain

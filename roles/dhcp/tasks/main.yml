@@ -1,0 +1,20 @@
+---
+- name: Установка DHCP сервера
+  package:
+    name: dhcp-server
+    state: present
+
+- name: Настройка DHCP сервера
+  template:
+    src: dhcpd.conf.j2
+    dest: /etc/dhcp/dhcpd.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart dhcpd
+
+- name: Запуск и включение DHCP сервера
+  systemd:
+    name: dhcpd
+    state: started
+    enabled: yes

@@ -1,0 +1,33 @@
+---
+- name: Установка BIND
+  package:
+    name: bind
+    state: present
+
+- name: Настройка BIND
+  template:
+    src: named.conf.j2
+    dest: /etc/named.conf
+    owner: root
+    group: named
+    mode: 0640
+  notify: restart named
+
+- name: Создание зоны домена
+  template:
+    src: db.hsoft.local.j2
+    dest: /var/named/db.{{ domain_name }}
+    owner: root
+    group: named
+    mode: 0640
+
+- name: Запуск и включение BIND
+  systemd:
+    name: named
+    state: started
+    enabled: yes
+
+- name: Обновление DNS для клиентов
+  command: samba-tool dns add 127.0.0.1 {{ domain_name }} {{ item }} A {{ hostvars[item]['ansible_default_ipv4']['address'] }}
+  with_items: "{{ groups['clients'] }}"
+  when: hostvars[item]['ansible_default_ipv4']['address'] is defined

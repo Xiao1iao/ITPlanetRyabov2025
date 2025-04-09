@@ -1,0 +1,14 @@
+---
+- name: Установка правил iptables
+  template:
+    src: iptables.rules.j2
+    dest: /etc/iptables/rules.v4
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Применение правил iptables
+  command: iptables-restore < /etc/iptables/rules.v4
+
+- name: Сохранение правил после перезагрузки
+  command: systemctl enable iptables
